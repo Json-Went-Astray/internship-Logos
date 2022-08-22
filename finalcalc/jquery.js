@@ -1,4 +1,5 @@
-var COMMISSION_FEE_CALC = 0.01; //Prowizja za leasing - domyślnie 1%
+var COMMISSION_FEE_CALC = 1.0; //Prowizja za leasing - domyślnie 1%
+var commission_rate_calc = 3.07 //oprocentowanie miesięczne banku pekao ~3,07%
 
 $("document").ready(() => {
 	validate();
@@ -61,6 +62,8 @@ function calc(allGood) {
 			break;
 			
 		case "60":
+			buyout = 0.01;
+			break;
 		case "72":
 			buyout = 0.01;
 			break;
@@ -71,16 +74,28 @@ function calc(allGood) {
 	$(".calc_label_3").html("Cena z wykupem:");
 	
     let nettoPrice = parseFloat($(".nettoPrice").val());
-	let initialPayment = $(".initialPayment").val() / 100;
+	let initialPayment = $(".initialPayment").val();
+	let period =  $(".period").val();
+
+	let c = nettoPrice - ((initialPayment / 100) * nettoPrice);
+	let r = (wibor1m + COMMISSION_FEE_CALC + commission_rate_calc) / 100 / 12;
+	let f = nettoPrice * buyout;
+
+	let ratePrice = ((c * r * Math.pow((1 + r), period)) - (f * r)) / (Math.pow((1 + r), period) - 1); 
+		
+	//okres miesięcy
+	$(".final_period").html(period); 
+
+	//licznik ze wzorku
+	let numerator = (ratePrice * period + (nettoPrice * buyout) + (nettoPrice * (initialPayment / 100))).toFixed(2);
 	
-	let finalPeriod = $(".period option:selected").text();
-
-	let rate = ((nettoPrice + ((wibor1m - 1) * nettoPrice)  - (buyout * nettoPrice) - (nettoPrice * initialPayment))) / $(".period").val();
-	let final = (nettoPrice + ((wibor1m - 1) * nettoPrice)  + (buyout * nettoPrice) + (nettoPrice * initialPayment) + (nettoPrice * COMMISSION_FEE_CALC));
-
-	$(".final").html(final.toFixed(2) + "zł (" + (((final + (nettoPrice * initialPayment)) / nettoPrice) * 100).toFixed(0) + "%)");
-	$(".month").html(rate.toFixed(2) + "zł");
-	$
-	console.log(perMonth * 36);
+	//cena za wszystko + ile to procent ceny netto
+	$(".final").html(numerator.toLocaleString('en') 
+	+ "zł (" 
+	+ ((numerator / nettoPrice) * 100).toFixed(2)
+	+ "%)");
+	
+	//*przewidywana* rata
+	$(".month").html(ratePrice.toFixed(2) + "zł"); 
  
 }
